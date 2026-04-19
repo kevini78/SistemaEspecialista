@@ -84,8 +84,12 @@ class Evidence:
     weight: float     # peso/CF máximo dessa evidência
 
     def similarity(self, observed: float) -> float:
-        # Similaridade fuzzy entre o esperado e o observado
-        return max(0.0, 1.0 - abs(self.expected - observed))
+        # Similaridade fuzzy quadratica: perfeita em exp==obs, cai
+        # rapidamente a medida que se afasta. Essa forma mais "picuda"
+        # evita que um sintoma esperado com intensidade intermediaria
+        # (ex.: "leve") dispare fortemente quando o observado e "ausente".
+        diff = abs(self.expected - observed)
+        return max(0.0, 1.0 - diff) ** 2
 
 
 DISEASES: Dict[str, str] = {
@@ -98,43 +102,45 @@ DISEASES: Dict[str, str] = {
 }
 
 
-# Convenção semântica (corrigida):
+# Convenção semântica:
 #
-# POSITIVA:  Evidence(sintoma, esperado_alto, +peso)
-#   - o sintoma favorece a hipótese quando observado próximo do esperado.
+# POSITIVA:            Evidence(sintoma, esperado, +peso)
+#   - Favorece a hipótese quando o observado está próximo do esperado.
 #
-# CONTRA-EVIDÊNCIA: Evidence(sintoma, 1.00, -peso)
-#   - só dispara penalidade quando o sintoma aparece com intensidade alta
-#     (similaridade com 1.0). Quando o sintoma está ausente, a similaridade
-#     é 0 e o CF fica 0 (não penaliza indevidamente).
+# CONTRA-EVIDÊNCIA:    Evidence(sintoma, 1.00, -peso)
+#   - Só penaliza quando o sintoma aparece com intensidade alta.
+#     Se ausente, similaridade = 0 e não há penalidade indevida.
 #
-# Essa convenção evita o bug de "penalizar por ausência" que existia antes.
+# AUSÊNCIA DE MARCADOR: Evidence(sintoma, 0.00, -peso)
+#   - Penaliza quando um sintoma-chave está AUSENTE em uma doença que
+#     normalmente o apresenta (ex.: dengue sem dor atrás dos olhos,
+#     COVID sem perda de olfato). Garante separação entre hipóteses
+#     com sintomas gerais parecidos mas marcadores distintos.
 
 RULES: Dict[str, List[Evidence]] = {
     # ----------------------------- RESFRIADO -----------------------------
     # Perfil: início gradual, sem febre, sintomas leves com predomínio de
     # coriza / congestão / dor de garganta.
     "resfriado": [
-        # Positivas
-        Evidence("febre",                0.00,  0.40),  # ausência apoia
-        Evidence("dor_muscular",         0.33,  0.25),
-        Evidence("cansaco",              0.33,  0.20),
-        Evidence("tosse_seca",           0.33,  0.20),
+        # Positivas (precisam de sintomas respiratorios para disparar)
         Evidence("coriza",               0.80,  0.60),
         Evidence("congestao_nasal",      0.80,  0.55),
         Evidence("dor_garganta",         0.70,  0.45),
+        Evidence("tosse_seca",           0.33,  0.15),
+        Evidence("dor_muscular",         0.33,  0.10),
+        Evidence("cansaco",              0.33,  0.08),
         # Contra-evidências (só penalizam se sintoma intenso)
-        Evidence("inicio_subito",        1.00, -0.45),
-        Evidence("febre",                1.00, -0.60),
-        Evidence("dor_cabeca",           1.00, -0.35),
-        Evidence("dor_muscular",         1.00, -0.45),
-        Evidence("cansaco",              1.00, -0.35),
-        Evidence("dor_atras_olhos",      1.00, -0.45),
-        Evidence("falta_ar",             1.00, -0.70),
-        Evidence("perda_olfato_paladar", 1.00, -0.60),
-        Evidence("manchas_pele",         1.00, -0.65),
-        Evidence("dor_facial",           1.00, -0.35),
-        Evidence("tosse_catarro",        1.00, -0.35),
+        Evidence("inicio_subito",        1.00, -0.55),
+        Evidence("febre",                1.00, -0.75),
+        Evidence("dor_cabeca",           1.00, -0.45),
+        Evidence("dor_muscular",         1.00, -0.55),
+        Evidence("cansaco",              1.00, -0.40),
+        Evidence("dor_atras_olhos",      1.00, -0.60),
+        Evidence("falta_ar",             1.00, -0.75),
+        Evidence("perda_olfato_paladar", 1.00, -0.70),
+        Evidence("manchas_pele",         1.00, -0.80),
+        Evidence("dor_facial",           1.00, -0.45),
+        Evidence("tosse_catarro",        1.00, -0.45),
     ],
 
     # ------------------------------- GRIPE -------------------------------
@@ -142,69 +148,82 @@ RULES: Dict[str, List[Evidence]] = {
     # cansaço intenso, tosse seca.
     "gripe": [
         # Positivas
-        Evidence("inicio_subito",        1.00,  0.50),
-        Evidence("febre",                0.80,  0.55),
-        Evidence("dor_cabeca",           0.55,  0.30),
-        Evidence("dor_muscular",         0.80,  0.55),
-        Evidence("cansaco",              0.80,  0.50),
-        Evidence("tosse_seca",           0.75,  0.45),
+        Evidence("inicio_subito",        1.00,  0.45),
+        Evidence("febre",                0.80,  0.50),  # alta mas nao extrema
+        Evidence("dor_cabeca",           0.55,  0.15),
+        Evidence("dor_muscular",         0.80,  0.50),
+        Evidence("cansaco",              0.80,  0.40),
+        Evidence("tosse_seca",           0.75,  0.35),
         Evidence("coriza",               0.50,  0.15),
         Evidence("congestao_nasal",      0.55,  0.15),
         Evidence("dor_garganta",         0.55,  0.20),
-        Evidence("nausea_vomito",        0.50,  0.15),
+        Evidence("nausea_vomito",        0.50,  0.10),
+        # Discriminador vs H1N1: intensidades extremas puxam para H1N1
+        Evidence("febre",                1.00, -0.40),
+        Evidence("dor_muscular",         1.00, -0.35),
+        Evidence("cansaco",              1.00, -0.30),
+        Evidence("nausea_vomito",        1.00, -0.30),
         # Contra-evidências
-        Evidence("perda_olfato_paladar", 1.00, -0.55),
-        Evidence("manchas_pele",         1.00, -0.55),
-        Evidence("dor_atras_olhos",      1.00, -0.35),
-        Evidence("dor_facial",           1.00, -0.35),
-        Evidence("tosse_catarro",        1.00, -0.35),
-        Evidence("falta_ar",             1.00, -0.30),
+        Evidence("perda_olfato_paladar", 1.00, -0.70),
+        Evidence("manchas_pele",         1.00, -0.70),
+        Evidence("dor_atras_olhos",      1.00, -0.55),
+        Evidence("dor_facial",           1.00, -0.50),
+        Evidence("tosse_catarro",        1.00, -0.45),
+        Evidence("falta_ar",             1.00, -0.45),
     ],
 
     # -------------------------------- H1N1 -------------------------------
     # Perfil: tudo exacerbado — febre > 39, dor muito intensa, cansaço
     # extremo, tosse seca intensa, náusea comum, pode ter falta de ar.
     "h1n1": [
-        # Positivas (intensidades mais altas que gripe comum)
-        Evidence("inicio_subito",        1.00,  0.55),
-        Evidence("febre",                1.00,  0.60),
-        Evidence("dor_cabeca",           0.80,  0.40),
-        Evidence("dor_muscular",         1.00,  0.60),
-        Evidence("cansaco",              1.00,  0.55),
-        Evidence("tosse_seca",           1.00,  0.55),
-        Evidence("dor_garganta",         0.55,  0.20),
-        Evidence("falta_ar",             0.55,  0.30),
-        Evidence("nausea_vomito",        0.80,  0.30),
-        # Contra-evidências
-        Evidence("perda_olfato_paladar", 1.00, -0.55),
-        Evidence("manchas_pele",         1.00, -0.55),
-        Evidence("dor_atras_olhos",      1.00, -0.35),
-        Evidence("dor_facial",           1.00, -0.35),
-        Evidence("tosse_catarro",        1.00, -0.40),
-        Evidence("coriza",               1.00, -0.25),
-        Evidence("congestao_nasal",      1.00, -0.20),
+        # Positivas — so disparam forte em intensidades muito altas
+        Evidence("inicio_subito",        1.00,  0.50),
+        Evidence("febre",                1.00,  0.65),  # febre muito alta
+        Evidence("dor_cabeca",           0.80,  0.30),
+        Evidence("dor_muscular",         1.00,  0.65),  # dor muito intensa
+        Evidence("cansaco",              1.00,  0.60),  # cansaço extremo
+        Evidence("tosse_seca",           1.00,  0.55),  # tosse seca intensa
+        Evidence("dor_garganta",         0.55,  0.15),
+        Evidence("falta_ar",             0.55,  0.40),
+        Evidence("nausea_vomito",        0.80,  0.45),  # H1N1 tem vomito "Comum"
+        # Discriminador vs gripe: febre/dor moderadas derrubam H1N1
+        Evidence("febre",                0.55, -0.50),
+        Evidence("dor_muscular",         0.55, -0.45),
+        Evidence("cansaco",              0.55, -0.35),
+        Evidence("febre",                0.80, -0.25),  # intenso (nao extremo)
+        Evidence("dor_muscular",         0.80, -0.20),  # intenso (nao extremo)
+        # Contra-evidências fortes para separar de dengue/COVID
+        Evidence("perda_olfato_paladar", 1.00, -0.75),
+        Evidence("manchas_pele",         1.00, -0.80),
+        Evidence("dor_atras_olhos",      1.00, -0.70),  # marcador de dengue
+        Evidence("dor_facial",           1.00, -0.50),
+        Evidence("tosse_catarro",        1.00, -0.55),
+        Evidence("coriza",               1.00, -0.40),
+        Evidence("congestao_nasal",      1.00, -0.35),
     ],
 
     # ------------------------------ COVID-19 -----------------------------
     # Perfil: início variável, febre moderada, tosse seca persistente,
     # falta de ar, PERDA DE OLFATO/PALADAR (marcador forte).
     "covid": [
-        # Positivas
-        Evidence("perda_olfato_paladar", 1.00,  0.85),  # marcador
-        Evidence("falta_ar",             0.80,  0.55),
-        Evidence("tosse_seca",           0.80,  0.50),
-        Evidence("febre",                0.55,  0.30),
-        Evidence("cansaco",              0.55,  0.25),
-        Evidence("dor_muscular",         0.55,  0.25),
-        Evidence("dor_cabeca",           0.55,  0.20),
-        Evidence("coriza",               0.55,  0.10),
-        Evidence("congestao_nasal",      0.55,  0.10),
-        Evidence("dor_garganta",         0.55,  0.15),
+        # Marcador — presente eleva muito, ausente derruba
+        Evidence("perda_olfato_paladar", 1.00,  0.85),  # marcador (presente)
+        Evidence("perda_olfato_paladar", 0.00, -0.55),  # marcador (ausente)
+        # Positivas (tabela: coriza/congestão/garganta "Comum" → 0.80)
+        Evidence("falta_ar",             0.80,  0.50),
+        Evidence("tosse_seca",           0.80,  0.45),
+        Evidence("febre",                0.55,  0.25),
+        Evidence("cansaco",              0.55,  0.20),
+        Evidence("dor_muscular",         0.55,  0.20),
+        Evidence("dor_cabeca",           0.55,  0.10),
+        Evidence("coriza",               0.80,  0.15),
+        Evidence("congestao_nasal",      0.80,  0.15),
+        Evidence("dor_garganta",         0.80,  0.15),
         # Contra-evidências
-        Evidence("manchas_pele",         1.00, -0.45),
-        Evidence("dor_atras_olhos",      1.00, -0.40),
-        Evidence("dor_facial",           1.00, -0.35),
-        Evidence("tosse_catarro",        1.00, -0.40),
+        Evidence("manchas_pele",         1.00, -0.55),
+        Evidence("dor_atras_olhos",      1.00, -0.60),  # marcador de dengue
+        Evidence("dor_facial",           1.00, -0.45),
+        Evidence("tosse_catarro",        1.00, -0.50),
     ],
 
     # ------------------------------- DENGUE ------------------------------
@@ -212,47 +231,50 @@ RULES: Dict[str, List[Evidence]] = {
     # (marcador) + MANCHAS NA PELE (marcador), dor muito intensa,
     # cansaço extremo, SEM sintomas respiratórios.
     "dengue": [
-        # Positivas (marcadores primeiro)
-        Evidence("dor_atras_olhos",      1.00,  0.85),  # marcador
+        # Marcadores — presentes elevam muito, dor atrás dos olhos ausente derruba
+        Evidence("dor_atras_olhos",      1.00,  0.85),  # marcador (presente)
+        Evidence("dor_atras_olhos",      0.00, -0.55),  # marcador (ausente)
         Evidence("manchas_pele",         0.85,  0.70),  # marcador
-        Evidence("inicio_subito",        1.00,  0.50),
-        Evidence("febre",                1.00,  0.55),
-        Evidence("dor_cabeca",           1.00,  0.55),
-        Evidence("dor_muscular",         1.00,  0.55),
-        Evidence("cansaco",              1.00,  0.50),
+        # Positivas gerais
+        Evidence("inicio_subito",        1.00,  0.45),
+        Evidence("febre",                1.00,  0.50),
+        Evidence("dor_cabeca",           1.00,  0.35),
+        Evidence("dor_muscular",         1.00,  0.45),
+        Evidence("cansaco",              1.00,  0.40),
         Evidence("nausea_vomito",        0.80,  0.35),
         # Contra-evidências: dengue quase não tem sintomas respiratórios
-        Evidence("tosse_seca",           1.00, -0.60),
-        Evidence("tosse_catarro",        1.00, -0.60),
-        Evidence("coriza",               1.00, -0.55),
-        Evidence("congestao_nasal",      1.00, -0.55),
-        Evidence("dor_garganta",         1.00, -0.45),
-        Evidence("falta_ar",             1.00, -0.40),
-        Evidence("perda_olfato_paladar", 1.00, -0.55),
-        Evidence("dor_facial",           1.00, -0.40),
+        Evidence("tosse_seca",           1.00, -0.70),
+        Evidence("tosse_catarro",        1.00, -0.70),
+        Evidence("coriza",               1.00, -0.65),
+        Evidence("congestao_nasal",      1.00, -0.65),
+        Evidence("dor_garganta",         1.00, -0.55),
+        Evidence("falta_ar",             1.00, -0.50),
+        Evidence("perda_olfato_paladar", 1.00, -0.65),
+        Evidence("dor_facial",           1.00, -0.50),
     ],
 
     # ------------------------------ SINUSITE -----------------------------
     # Perfil: início gradual, sem febre, DOR FACIAL (marcador), coriza
     # muito comum, congestão intensa, tosse com catarro, duração longa.
     "sinusite": [
+        # Marcador — dor facial é característica; ausência penaliza moderadamente
+        Evidence("dor_facial",           0.90,  0.80),  # marcador (presente)
+        Evidence("dor_facial",           0.00, -0.40),  # marcador (ausente)
         # Positivas
-        Evidence("dor_facial",           0.90,  0.80),  # marcador
-        Evidence("congestao_nasal",      0.90,  0.60),
-        Evidence("coriza",               0.90,  0.50),
-        Evidence("tosse_catarro",        0.75,  0.50),
-        Evidence("dor_cabeca",           0.80,  0.40),
-        Evidence("dor_atras_olhos",      0.55,  0.25),
-        Evidence("perda_olfato_paladar", 0.55,  0.25),
-        Evidence("dor_garganta",         0.55,  0.15),
-        Evidence("febre",                0.00,  0.20),  # tipicamente ausente
+        Evidence("congestao_nasal",      0.90,  0.55),
+        Evidence("coriza",               0.90,  0.45),
+        Evidence("tosse_catarro",        0.75,  0.45),
+        Evidence("dor_cabeca",           0.80,  0.35),
+        Evidence("dor_atras_olhos",      0.55,  0.20),
+        Evidence("perda_olfato_paladar", 0.55,  0.20),
+        Evidence("dor_garganta",         0.55,  0.10),
         # Contra-evidências
-        Evidence("inicio_subito",        1.00, -0.50),
-        Evidence("febre",                1.00, -0.45),
-        Evidence("dor_muscular",         1.00, -0.50),
-        Evidence("manchas_pele",         1.00, -0.55),
-        Evidence("tosse_seca",           1.00, -0.35),
-        Evidence("falta_ar",             1.00, -0.30),
+        Evidence("inicio_subito",        1.00, -0.60),
+        Evidence("febre",                1.00, -0.55),
+        Evidence("dor_muscular",         1.00, -0.60),
+        Evidence("manchas_pele",         1.00, -0.70),
+        Evidence("tosse_seca",           1.00, -0.45),
+        Evidence("falta_ar",             1.00, -0.40),
     ],
 }
 

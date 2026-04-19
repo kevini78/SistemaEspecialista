@@ -79,7 +79,9 @@ por trás, entre 0 e 1. Isso é lógica fuzzy.
 doença.** Na dengue, por exemplo, o esperado é febre bem alta.
 Se a pessoa diz que a febre está moderada, o sintoma “conta” para
 dengue, mas não tanto quanto se estivesse muito alta. Essa diferença
-é calculada como uma similaridade: `1 − |esperado − observado|`.
+é calculada como uma similaridade quadrática: `(1 − |esperado − observado|)²`.
+A forma quadrática faz a confiança cair rápido quando a intensidade
+difere do esperado, evitando que sintomas vagos disparem regras demais.
 
 **3. As evidências são combinadas.**
 Uma doença costuma ter vários sintomas contando a favor (e alguns
@@ -204,8 +206,8 @@ sintomas parciais, verificando se o sistema classifica corretamente:
 python test_validation.py
 ```
 
-Atualmente todos os 17 testes passam (6 perfis clássicos + 11
-variações realistas).
+Atualmente todos os 26 testes passam (6 perfis clássicos + 17
+variações realistas + 3 casos limite).
 
 ---
 
