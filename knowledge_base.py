@@ -17,8 +17,7 @@ from typing import Dict, List
 # --------------------------------------------------------------------
 # 1) Termos fuzzy de intensidade dos sintomas
 # --------------------------------------------------------------------
-# Conjuntos fuzzy triangulares simplificados (centróides).
-# O usuário escolhe um rótulo linguístico; convertemos em grau [0,1].
+
 INTENSITY_LEVELS: Dict[str, float] = {
     "ausente":       0.00,
     "muito_leve":    0.15,
