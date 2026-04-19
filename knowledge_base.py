@@ -279,7 +279,7 @@ RULES: Dict[str, List[Evidence]] = {
 
 
 # --------------------------------------------------------------------
-# 4) Recomendações associadas (explicações para o usuário)
+# 4) Recomendações associadas 
 # --------------------------------------------------------------------
 RECOMMENDATIONS: Dict[str, str] = {
     "resfriado": (
