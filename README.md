@@ -29,30 +29,37 @@ faz bem. Por isso o problema encaixou no escopo da disciplina.
 
 ## A tabela que serviu de base
 
-Toda a base de conhecimento saiu da tabela abaixo, que foi o ponto de
-partida do trabalho:
+Toda a base de conhecimento saiu da tabela clínica abaixo. Os 16
+sintomas que o sistema pergunta correspondem exatamente às linhas
+desta tabela. “Tosse” foi desdobrada em duas linhas (seca e com
+catarro) porque o tipo da tosse é um sinal discriminativo importante,
+e “dor facial” foi separada da dor de cabeça genérica por ser o
+marcador típico de sinusite.
 
-| Sintoma / Critério | Resfriado | Gripe (Influenza) | H1N1 | COVID-19 | Dengue | Sinusite |
+| Sintoma | Resfriado | Gripe (Influenza) | H1N1 | COVID-19 | Dengue | Sinusite |
 |---|---|---|---|---|---|---|
-| Início dos sintomas | Gradual | Súbito | Súbito (rápido) | Variável | Súbito | Gradual |
+| Início súbito | Gradual | Súbito | Súbito | Variável | Súbito | Gradual |
 | Febre | Rara | Alta (38–39 °C) | Muito alta (>39 °C) | Moderada | Muito alta (>39 °C) | Rara |
-| Dor de cabeça | Leve | Moderada | Intensa | Moderada | Muito intensa | Intensa (face) |
+| Dor de cabeça | Leve | Moderada | Intensa | Moderada | Muito intensa | Intensa |
 | Dor atrás dos olhos | Não | Raro | Raro | Raro | Muito comum | Comum |
 | Dor muscular | Leve | Intensa | Muito intensa | Moderada | Muito intensa | Leve |
 | Cansaço / fadiga | Leve | Intenso | Extremo | Moderado | Extremo | Moderado |
-| Tosse | Leve | Seca | Seca intensa | Seca persistente | Rara | Com catarro |
+| Tosse seca | Leve | Sim | Intensa | Persistente | Rara | Rara |
+| Tosse com catarro | Não | Não | Não | Não | Não | Comum |
 | Coriza | Comum | Às vezes | Pouco comum | Comum | Raro | Muito comum |
 | Congestão nasal | Comum | Moderada | Leve | Comum | Raro | Intensa |
 | Dor de garganta | Comum | Moderada | Moderada | Comum | Raro | Moderada |
 | Falta de ar | Raro | Raro | Pode ocorrer | Comum | Raro | Raro |
 | Perda de olfato/paladar | Não | Não | Não | Muito comum | Não | Pode ocorrer |
 | Manchas na pele | Não | Não | Não | Raro | Comum | Não |
-| Sintomas respiratórios | Leves | Fortes | Muito fortes | Fortes | Quase ausentes | Fortes |
 | Náusea / vômito | Raro | Às vezes | Comum | Às vezes | Comum | Raro |
-| Duração média | 3–5 dias | 7–10 dias | 7–14 dias | 5–14 dias | 5–10 dias | >10 dias |
+| Dor facial (sinusal) | Não | Não | Não | Não | Não | Sim (marcador) |
 
-A ideia foi transformar cada célula dessa tabela em uma regra que o
-sistema consulta na hora de decidir.
+Cada célula dessa tabela virou uma regra que o sistema consulta na
+hora de decidir. A duração média de cada doença (3–5 dias para
+resfriado, 7–10 para gripe, 5–10 para dengue, mais de 10 para sinusite
+etc.) é usada só como nota clínica nas recomendações — não é um
+sintoma que o usuário informa.
 
 ---
 
@@ -138,16 +145,6 @@ dengue. A lógica fuzzy é o ferramental clássico pra converter
 rótulos linguísticos em graus numéricos, então foi uma escolha
 quase automática.
 
-### Por que Python + Streamlit?
-
-Python é a linguagem mais usada em cursos de IA, então faz sentido
-manter o padrão. Streamlit foi escolhido porque resolve um problema
-que geralmente atrapalha trabalhos acadêmicos: **a interface**.
-Sem ele, eu teria que separar o projeto em backend e frontend, gastar
-tempo com HTML/CSS/JS, e a parte de IA ficaria diluída no meio do
-código de interface. Com Streamlit, uma tela decente fica pronta em
-poucas dezenas de linhas e todo mundo consegue rodar localmente com
-um `pip install` e um comando.
 
 ### Por que os pesos estão no código, escritos à mão?
 
@@ -197,18 +194,27 @@ O navegador abre automaticamente em `http://localhost:8501`.
 Na tela, você marca a intensidade de cada sintoma clicando nos
 botões e depois clica em **Obter diagnóstico**.
 
+### Rodar os testes de validação
+
+O arquivo `test_validation.py` reproduz o perfil "livro-texto" de cada
+doença (exatamente como aparece na tabela) e também cenários com
+sintomas parciais, verificando se o sistema classifica corretamente:
+
+```bash
+python test_validation.py
+```
+
+Atualmente todos os 17 testes passam (6 perfis clássicos + 11
+variações realistas).
+
 ---
 
 ## Limitações que a gente reconhece
 
 - A base cobre só seis doenças. Qualquer coisa fora disso o sistema
   vai tentar encaixar numa delas, o que obviamente é errado.
-- Os pesos foram calibrados olhando a tabela, não dados reais. Então
-  os resultados são coerentes com a tabela, mas não necessariamente
-  com a realidade clínica.
 - O sistema não considera contexto (idade, comorbidades, onde a
   pessoa mora, se está tendo surto de alguma doença na região).
 - Sintomas raros, de alarme ou atípicos não entram na conta.
 
-Ou seja: o protótipo mostra como o raciocínio funciona, mas usar isso
-pra diagnosticar alguém de verdade seria uma péssima ideia.
+
