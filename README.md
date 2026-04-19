@@ -38,22 +38,22 @@ marcador típico de sinusite.
 
 | Sintoma | Resfriado | Gripe (Influenza) | H1N1 | COVID-19 | Dengue | Sinusite |
 |---|---|---|---|---|---|---|
-| Início súbito | Gradual | Súbito | Súbito | Variável | Súbito | Gradual |
-| Febre | Rara | Alta (38–39 °C) | Muito alta (>39 °C) | Moderada | Muito alta (>39 °C) | Rara |
-| Dor de cabeça | Leve | Moderada | Intensa | Moderada | Muito intensa | Intensa |
-| Dor atrás dos olhos | Não | Raro | Raro | Raro | Muito comum | Comum |
-| Dor muscular | Leve | Intensa | Muito intensa | Moderada | Muito intensa | Leve |
-| Cansaço / fadiga | Leve | Intenso | Extremo | Moderado | Extremo | Moderado |
-| Tosse seca | Leve | Sim | Intensa | Persistente | Rara | Rara |
-| Tosse com catarro | Não | Não | Não | Não | Não | Comum |
-| Coriza | Comum | Às vezes | Pouco comum | Comum | Raro | Muito comum |
-| Congestão nasal | Comum | Moderada | Leve | Comum | Raro | Intensa |
-| Dor de garganta | Comum | Moderada | Moderada | Comum | Raro | Moderada |
-| Falta de ar | Raro | Raro | Pode ocorrer | Comum | Raro | Raro |
-| Perda de olfato/paladar | Não | Não | Não | Muito comum | Não | Pode ocorrer |
-| Manchas na pele | Não | Não | Não | Raro | Comum | Não |
-| Náusea / vômito | Raro | Às vezes | Comum | Às vezes | Comum | Raro |
-| Dor facial (sinusal) | Não | Não | Não | Não | Não | Sim (marcador) |
+| Início súbito | Ausente | Muito intenso | Muito intenso | Moderado | Muito intenso | Ausente |
+| Febre | Ausente | Intenso | Muito intenso | Moderado | Muito intenso | Ausente |
+| Dor de cabeça | Leve | Moderado | Intenso | Moderado | Muito intenso | Intenso |
+| Dor atrás dos olhos | Ausente | Ausente | Ausente | Ausente | Muito intenso | Moderado |
+| Dor muscular | Leve | Intenso | Muito intenso | Moderado | Muito intenso | Leve |
+| Cansaço / fadiga | Leve | Intenso | Muito intenso | Moderado | Muito intenso | Moderado |
+| Tosse seca | Leve | Intenso | Muito intenso | Intenso | Ausente | Ausente |
+| Tosse com catarro | Ausente | Ausente | Ausente | Ausente | Ausente | Intenso |
+| Coriza | Moderado | Leve | Leve | Moderado | Ausente | Muito intenso |
+| Congestão nasal | Moderado | Moderado | Leve | Moderado | Ausente | Intenso |
+| Dor de garganta | Moderado | Moderado | Moderado | Moderado | Ausente | Moderado |
+| Falta de ar | Ausente | Ausente | Moderado | Intenso | Ausente | Ausente |
+| Perda de olfato/paladar | Ausente | Ausente | Ausente | Muito intenso | Ausente | Moderado |
+| Manchas na pele | Ausente | Ausente | Ausente | Ausente | Intenso | Ausente |
+| Náusea / vômito | Ausente | Leve | Intenso | Leve | Intenso | Ausente |
+| Dor facial (sinusal) | Ausente | Ausente | Ausente | Ausente | Ausente | Intenso |
 
 Cada célula dessa tabela virou uma regra que o sistema consulta na
 hora de decidir. A duração média de cada doença (3–5 dias para
