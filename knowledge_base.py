@@ -308,7 +308,7 @@ RECOMMENDATIONS: Dict[str, str] = {
     ),
     "sinusite": (
         "Lavagem nasal com soro fisiológico, analgésicos e hidratação. "
-        "Se sintomas > 10 dias ou piora após melhora inicial, avaliação "
+        "Se sintomas persistirem por 10 dias ou piora após melhora inicial, avaliação "
         "médica para possível antibiótico."
     ),
 }
